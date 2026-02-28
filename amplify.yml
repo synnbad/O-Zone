@@ -1,6 +1,6 @@
 version: 1
 applications:
-  - appRoot: O-Zone UI
+  - appRoot: O-Zone-UI
     frontend:
       phases:
         preBuild:
