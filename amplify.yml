@@ -1,31 +1,17 @@
 version: 1
-applications:
-  - appRoot: O-Zone-UI
-    frontend:
-      phases:
-        preBuild:
-          commands:
-            - npm ci
-        build:
-          commands:
-            - npm run build
-      artifacts:
-        baseDirectory: dist
-        files:
-          - '**/*'
-      cache:
-        paths:
-          - node_modules/**/*
-  - appRoot: O-Zone
-    backend:
-      phases:
-        build:
-          commands:
-            - pip install -r requirements.txt -t ./lib
-            - cp -r src lib/
-            - cp -r .env lib/ || true
-            - cd lib && zip -r ../function.zip .
-      artifacts:
-        baseDirectory: .
-        files:
-          - function.zip
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - cd O-Zone-UI
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: O-Zone-UI/dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - O-Zone-UI/node_modules/**/*
