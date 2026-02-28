@@ -22,7 +22,7 @@ class Config:
     """Central configuration for O-Zone MVP."""
     
     # API Configuration
-    OPENAQ_API_BASE_URL = "https://api.openaq.org/v2"
+    OPENAQ_API_BASE_URL = "https://api.openaq.org/v3"
     OPENAQ_API_KEY = os.getenv("OPENAQ_API_KEY", "")
     
     # AWS Configuration
@@ -30,7 +30,7 @@ class Config:
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
     AWS_SESSION_TOKEN = os.getenv("AWS_SESSION_TOKEN", "")  # For temporary credentials
-    BEDROCK_MODEL_ID = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"  # Using inference profile
+    BEDROCK_MODEL_ID = "global.anthropic.claude-opus-4-6-v1"  # Claude Opus 4.6 - Global inference profile
     
     # Cache Configuration
     CACHE_TTL_SECONDS = 900  # 15 minutes

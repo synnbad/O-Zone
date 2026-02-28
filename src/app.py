@@ -20,6 +20,8 @@ from src.config import Config
 from src.data_fetcher import get_location, get_current_measurements, get_historical_measurements
 from src.aqi_calculator import calculate_overall_aqi, get_aqi_category
 from src.bedrock_client import get_recommendation
+from src.responsive_styles import inject_responsive_styles
+from src.pwa_config import setup_pwa_files
 
 
 # Page configuration
@@ -60,6 +62,22 @@ if 'visible_stations' not in st.session_state:
 
 def main():
     """Main application entry point."""
+    # Inject responsive CSS styles for mobile, tablet, and desktop
+    try:
+        inject_responsive_styles()
+    except Exception as e:
+        st.warning("⚠️ Responsive styles could not be loaded. Some features may not work on mobile.")
+        import logging
+        logging.error(f"CSS injection failed: {e}")
+    
+    # Setup PWA files (manifest.json and service worker)
+    try:
+        setup_pwa_files()
+    except Exception as e:
+        st.info("ℹ️ App installation feature is currently unavailable.")
+        import logging
+        logging.error(f"PWA setup failed: {e}")
+    
     # Header
     st.title("🌍 O-Zone Air Quality Advisor")
     st.markdown("*AI-powered outdoor activity recommendations based on real-time air quality*")
@@ -104,6 +122,9 @@ def render_location_input():
     """Render location search interface."""
     st.header("📍 Location")
     
+    # Wrap location input and map toggle in mobile-header for compact mobile layout
+    st.markdown('<div class="mobile-header">', unsafe_allow_html=True)
+    
     col1, col2, col3 = st.columns([3, 1, 1])
     
     with col1:
@@ -124,6 +145,8 @@ def render_location_input():
         if st.button("🗺️ Explore Map", use_container_width=True):
             st.session_state.view_mode = "globe_view"
             st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
     
     if search_button and location_query:
         with st.spinner("Searching for location..."):
