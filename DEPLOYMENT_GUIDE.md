@@ -1,6 +1,6 @@
 # O-Zone Hackathon Deployment Guide
 
-## Quick Deployment to AWS Amplify
+## Quick Deployment to AWS Amplify (Unified Frontend + Backend)
 
 ### Prerequisites
 - AWS Account with Amplify access
@@ -33,8 +33,11 @@ aws amplify create-app --name o-zone-hackathon --region us-east-1
 ### Step 3: Configure Build Settings
 
 1. Amplify will detect the `amplify.yml` file automatically
+   - The file now includes both frontend and backend build configuration
+   - Backend will be built and deployed automatically alongside frontend
+
 2. Click "Advanced settings"
-3. Add environment variables:
+3. Add environment variables (REQUIRED for backend):
 
 ```
 AWS_REGION=us-east-1
@@ -47,7 +50,73 @@ OPENAQ_API_KEY=<your-openaq-api-key>
 
 4. Click "Next" → "Save and deploy"
 
-### Step 4: Set Up Backend API (Lambda + API Gateway)
+### Step 4: Monitor Unified Deployment
+
+The amplify.yml configuration now deploys both frontend and backend in a single build:
+
+**Build Phases:**
+1. Backend preBuild: Install Python dependencies
+2. Backend build: Package FastAPI application
+3. Frontend preBuild: Install Node.js dependencies
+4. Frontend build: Build React application
+5. Deploy: Deploy both frontend and backend
+
+**Expected Build Time**: 5-10 minutes
+
+**Monitor Build Progress:**
+1. Go to Amplify Console
+2. Click on your app
+3. View build logs for both backend and frontend phases
+
+### Step 5: Verify Deployment
+
+Once the build completes, verify both frontend and backend are working:
+
+**Test Backend API:**
+```bash
+# Replace with your Amplify app URL
+AMPLIFY_URL="https://your-app-id.amplifyapp.com"
+
+# Test health endpoint
+curl $AMPLIFY_URL/api/health
+
+# Expected response:
+# {"status":"healthy","timestamp":"...","version":"1.0.0","service":"O-Zone API"}
+
+# Test location search
+curl "$AMPLIFY_URL/api/locations/search?q=San+Francisco"
+```
+
+**Test Frontend:**
+1. Open your Amplify app URL in a browser
+2. Test features:
+   - Location search
+   - AQI display
+   - Chat functionality
+   - Activity recommendations
+   - Global map
+
+### Step 6: Update Frontend API URL (if needed)
+
+If your frontend needs to be configured with the backend URL:
+
+1. Update `O-Zone-UI/.env.production`:
+```
+VITE_API_URL=https://your-app-id.amplifyapp.com
+```
+
+2. Commit and push to trigger a new build:
+```bash
+git add O-Zone-UI/.env.production
+git commit -m "Update API URL for production"
+git push origin main
+```
+
+## Legacy Deployment Method (Lambda + API Gateway)
+
+**Note**: The unified Amplify deployment above is now the recommended approach. The manual Lambda deployment below is kept for reference only.
+
+### Step 4 (Legacy): Set Up Backend API (Lambda + API Gateway)
 
 Since Amplify primarily hosts static sites, we need to deploy the backend separately:
 

@@ -6,11 +6,19 @@ cache settings, AQI breakpoint tables, and UI configuration options.
 """
 
 import os
+import logging
 from typing import Dict, List, Tuple
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 class ConfigurationError(Exception):
@@ -26,11 +34,12 @@ class Config:
     OPENAQ_API_KEY = os.getenv("OPENAQ_API_KEY", "")
     
     # AWS Configuration
-    AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
-    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
-    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
-    AWS_SESSION_TOKEN = os.getenv("AWS_SESSION_TOKEN", "")  # For temporary credentials
-    BEDROCK_MODEL_ID = "global.anthropic.claude-opus-4-6-v1"  # Claude Opus 4.6 - Global inference profile
+    # Note: Amplify doesn't allow AWS_* prefix, so we use OZONE_AWS_* instead
+    AWS_REGION = os.getenv("OZONE_AWS_REGION", os.getenv("AWS_REGION", "us-east-1"))
+    AWS_ACCESS_KEY_ID = os.getenv("OZONE_AWS_ACCESS_KEY_ID", os.getenv("AWS_ACCESS_KEY_ID", ""))
+    AWS_SECRET_ACCESS_KEY = os.getenv("OZONE_AWS_SECRET_ACCESS_KEY", os.getenv("AWS_SECRET_ACCESS_KEY", ""))
+    AWS_SESSION_TOKEN = os.getenv("OZONE_AWS_SESSION_TOKEN", os.getenv("AWS_SESSION_TOKEN", ""))  # For temporary credentials
+    BEDROCK_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "global.anthropic.claude-opus-4-6-v1")  # Claude Opus 4.6 - Global inference profile
     
     # Cache Configuration
     CACHE_TTL_SECONDS = 900  # 15 minutes
@@ -139,18 +148,27 @@ class Config:
         """
         errors = []
         
-        # AWS credentials are optional - app will work without AI recommendations
-        # Just log warnings instead of errors
+        # Check AWS credentials with proper logging
         if not Config.AWS_REGION:
-            print("⚠️  Warning: AWS_REGION not set. AI recommendations will use fallback mode.")
+            logger.warning("OZONE_AWS_REGION environment variable not set. Using default: us-east-1")
         
         if not Config.AWS_ACCESS_KEY_ID:
-            print("⚠️  Warning: AWS_ACCESS_KEY_ID not set. AI recommendations will use fallback mode.")
+            logger.warning("OZONE_AWS_ACCESS_KEY_ID environment variable not set. AI recommendations will use fallback mode.")
         
         if not Config.AWS_SECRET_ACCESS_KEY:
-            print("⚠️  Warning: AWS_SECRET_ACCESS_KEY not set. AI recommendations will use fallback mode.")
+            logger.warning("OZONE_AWS_SECRET_ACCESS_KEY environment variable not set. AI recommendations will use fallback mode.")
         
-        # Note: OPENAQ_API_KEY is optional as OpenAQ has a free tier without key
+        if not Config.BEDROCK_MODEL_ID:
+            logger.warning("BEDROCK_MODEL_ID environment variable not set. Using default model.")
+        
+        # Check OpenAQ API key (optional but recommended)
+        if not Config.OPENAQ_API_KEY:
+            logger.warning("OPENAQ_API_KEY environment variable not set. API rate limits may apply.")
+        
+        # Log successful configuration
+        logger.info(f"Configuration loaded: AWS_REGION={Config.AWS_REGION}")
+        logger.info(f"OpenAQ API configured: {bool(Config.OPENAQ_API_KEY)}")
+        logger.info(f"AWS credentials configured: {bool(Config.AWS_ACCESS_KEY_ID and Config.AWS_SECRET_ACCESS_KEY)}")
         
         # Validate breakpoint table structure
         for pollutant, breakpoints in Config.AQI_BREAKPOINTS.items():

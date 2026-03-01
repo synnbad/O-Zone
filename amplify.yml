@@ -1,4 +1,20 @@
 version: 1
+
+backend:
+  phases:
+    preBuild:
+      commands:
+        - pip install --upgrade pip
+        - pip install -r requirements.txt -t ./backend_package
+        - cp -r src ./backend_package/
+    build:
+      commands:
+        - echo "Backend build complete"
+  artifacts:
+    baseDirectory: backend_package
+    files:
+      - '**/*'
+
 frontend:
   phases:
     preBuild:

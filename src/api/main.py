@@ -6,10 +6,19 @@ FastAPI application providing REST API for air quality data, recommendations, an
 
 import os
 import sys
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 from dotenv import load_dotenv
+import time
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Add project root to path
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,6 +37,29 @@ app = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json"
 )
+
+# Request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all API requests with timing information"""
+    start_time = time.time()
+    
+    # Log request
+    logger.info(f"Request: {request.method} {request.url.path}")
+    
+    # Process request
+    response = await call_next(request)
+    
+    # Calculate duration
+    duration = time.time() - start_time
+    
+    # Log response
+    logger.info(
+        f"Response: {request.method} {request.url.path} "
+        f"- Status: {response.status_code} - Duration: {duration:.3f}s"
+    )
+    
+    return response
 
 # CORS configuration for demo (allow all origins)
 app.add_middleware(
@@ -52,6 +84,7 @@ app.include_router(map_stations.router, prefix="/api", tags=["Map"])
 @app.get("/")
 async def root():
     """Root endpoint"""
+    logger.info("Root endpoint accessed")
     return {
         "message": "O-Zone API",
         "version": "1.0.0",
@@ -61,6 +94,13 @@ async def root():
 # Lambda handler for AWS deployment
 handler = Mangum(app)
 
+# Log startup
+logger.info("O-Zone API initialized successfully")
+logger.info(f"Environment: AWS_REGION={os.getenv('OZONE_AWS_REGION', os.getenv('AWS_REGION', 'not set'))}")
+logger.info(f"OpenAQ API Key configured: {bool(os.getenv('OPENAQ_API_KEY'))}")
+logger.info(f"AWS credentials configured: {bool(os.getenv('OZONE_AWS_ACCESS_KEY_ID', os.getenv('AWS_ACCESS_KEY_ID')))}")
+
 if __name__ == "__main__":
     import uvicorn
+    logger.info("Starting development server on http://0.0.0.0:8000")
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

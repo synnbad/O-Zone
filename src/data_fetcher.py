@@ -63,6 +63,9 @@ def _call_openaq_api(endpoint: str, params: dict, retry: bool = True) -> dict:
     Raises:
         Exception: If API call fails after retry
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     url = f"{Config.OPENAQ_API_BASE_URL}{endpoint}"
     headers = {
         "Accept": "application/json"
@@ -76,12 +79,37 @@ def _call_openaq_api(endpoint: str, params: dict, retry: bool = True) -> dict:
         with httpx.Client(timeout=30.0) as client:
             response = client.get(url, params=params, headers=headers)
             response.raise_for_status()
+            logger.info(f"OpenAQ API call successful: {endpoint}")
             return response.json()
     
-    except (httpx.HTTPError, httpx.TimeoutException) as e:
+    except httpx.TimeoutException as e:
+        logger.error(f"OpenAQ API request timed out: {endpoint}")
         if retry:
-            # Retry once after 1 second delay
-            print(f"OpenAQ API error, retrying: {e}")
+            logger.info("Retrying OpenAQ API request...")
+            time.sleep(1)
+            return _call_openaq_api(endpoint, params, retry=False)
+        else:
+            raise Exception(
+                f"OpenAQ API timeout: Request to {endpoint} exceeded 30 seconds. "
+                f"Please try again later."
+            )
+    
+    except httpx.HTTPStatusError as e:
+        logger.error(f"OpenAQ API returned error {e.response.status_code}: {endpoint}")
+        if retry and e.response.status_code >= 500:
+            logger.info("Retrying OpenAQ API request due to server error...")
+            time.sleep(1)
+            return _call_openaq_api(endpoint, params, retry=False)
+        else:
+            raise Exception(
+                f"OpenAQ API error: {e.response.status_code} - {e.response.text}. "
+                f"Please check your request and try again."
+            )
+    
+    except httpx.HTTPError as e:
+        logger.error(f"OpenAQ API HTTP error: {str(e)}")
+        if retry:
+            logger.info("Retrying OpenAQ API request...")
             time.sleep(1)
             return _call_openaq_api(endpoint, params, retry=False)
         else:
@@ -89,6 +117,7 @@ def _call_openaq_api(endpoint: str, params: dict, retry: bool = True) -> dict:
                 f"OpenAQ API request failed: {str(e)}. "
                 f"Please check your internet connection and try again."
             )
+
 
 
 def get_location(location_query: str) -> Optional[Location]:

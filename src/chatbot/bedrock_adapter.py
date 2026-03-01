@@ -144,10 +144,11 @@ def call_claude_opus(prompt: str, parameters: dict) -> str:
         # If config not available, check environment variables directly
         import os
         class Config:
-            AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-            AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-            AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
-            AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
+            # Support both OZONE_AWS_* (for Amplify) and AWS_* (for local dev)
+            AWS_ACCESS_KEY_ID = os.getenv('OZONE_AWS_ACCESS_KEY_ID', os.getenv('AWS_ACCESS_KEY_ID'))
+            AWS_SECRET_ACCESS_KEY = os.getenv('OZONE_AWS_SECRET_ACCESS_KEY', os.getenv('AWS_SECRET_ACCESS_KEY'))
+            AWS_SESSION_TOKEN = os.getenv('OZONE_AWS_SESSION_TOKEN', os.getenv('AWS_SESSION_TOKEN'))
+            AWS_REGION = os.getenv('OZONE_AWS_REGION', os.getenv('AWS_REGION', 'us-east-1'))
             BEDROCK_MODEL_ID = os.getenv('BEDROCK_MODEL_ID', 'anthropic.claude-opus-4-6-20250514')
     
     # Check if AWS credentials are configured
