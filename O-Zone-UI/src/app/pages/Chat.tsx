@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft, MessageCircle, Send, Bot, User } from "lucide-react";
 import { useUser } from "../context/UserContext";
-import { useChat } from "../hooks/useChat";
+import { useChat } from "@/hooks/useChat";
 
 export function Chat() {
   const navigate = useNavigate();
